@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lady Breaks Worksheet</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts. crossorigin="anonymous" lets html-to-image read this
+         stylesheet's rules (via CSSOM) to embed the fonts into the export -
+         without it, the browser still applies the stylesheet fine for
+         normal page rendering, but JS can't inspect a cross-origin
+         stylesheet's cssRules, so html-to-image's font-embedding step
+         throws a SecurityError on every export. -->
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet" crossorigin="anonymous">
+    <!-- html-to-image: captures the export by serializing the real, live
+         DOM into an SVG <foreignObject> and letting the browser itself
+         rasterize it - unlike html2canvas (which reimplements CSS layout
+         and text drawing from scratch), this reuses the browser's own
+         rendering engine, so fonts, flexbox centering, input values AND
+         placeholders all come out pixel-identical to what's on screen,
+         with no manual DOM-cloning/style-copying needed. -->
+    <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Prompt', sans-serif;
+            background-color: #e5e7eb;
+        }
+        
+        .cursive-title {
+            font-family: 'Great Vibes', cursive;
+        }
+
+        /* Hide specific elements during export */
+        .export-hide {
+            display: flex; /* Default state */
+        }
+
+        .exporting .export-hide {
+            display: none !important;
+        }
+
+        /* Show elements only during export */
+        .export-show {
+            display: none;
+        }
+
+        .exporting .export-show {
+            display: block;
+        }
+
+        /* Force white background during export */
+        .exporting #worksheet-wrapper {
+            background: #ffffff !important;
+            box-shadow: none !important;
+        }
+        
+        /* Smooth fade in */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Export result modal (used as a reliable cross-device fallback:
+           iPad/iPhone Safari frequently ignores the <a download> attribute,
+           so we always give the user a visible image they can save manually,
+           plus a native Share button and a normal Download button) */
+        #export-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(17, 24, 39, 0.85);
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        #export-modal.open {
+            display: flex;
+        }
+        #export-modal-inner {
+            background: #fff;
+            border-radius: 1.5rem;
+            max-width: 90vw;
+            max-height: 90vh;
+            width: 100%;
+            max-width: 40rem;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        #export-modal-img-wrap {
+            overflow: auto;
+            flex: 1 1 auto;
+            background: #f3f4f6;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+        }
+        #export-modal-img-wrap img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+    </style>
+</head>
+<body class="min-h-screen py-8 px-2 sm:px-6 flex flex-col items-center">
+
+    <!-- CRITICAL FIX 1: Background applied to the specific wrapper to ensure html2canvas captures it -->
+    <div id="worksheet-wrapper" class="w-full max-w-4xl bg-[repeating-linear-gradient(90deg,#ffffff,#ffffff_40px,#eef2ff_40px,#eef2ff_80px)] rounded-[2rem] shadow-2xl relative p-6 sm:p-10">
+        
+        <!-- Header Section -->
+        <header class="flex flex-col md:flex-row gap-6 mb-10">
+            <!-- Left: Logo Box -->
+            <div class="w-full md:w-5/12 bg-pink-400 rounded-3xl p-8 text-white text-center shadow-md relative overflow-hidden flex flex-col justify-center items-center">
+                <h1 class="cursive-title text-6xl md:text-7xl drop-shadow-md leading-none mb-2 relative z-10">Lady Breaks</h1>
+                <h2 class="text-3xl font-bold relative z-10">เค้กผู้ดี</h2>
+                <!-- Decorative circles -->
+                <div class="absolute -top-10 -left-10 w-32 h-32 bg-pink-300 rounded-full opacity-50"></div>
+                <div class="absolute -bottom-8 -right-8 w-24 h-24 bg-pink-500 rounded-full opacity-50"></div>
+            </div>
+            
+            <!-- Right: Group Info Box -->
+            <!-- CRITICAL FIX: Yellow border for group info -->
+            <div class="w-full md:w-7/12 bg-white border-2 border-yellow-400 rounded-3xl p-6 shadow-sm flex flex-col relative z-10">
+                <div class="flex items-center gap-2 mb-3 font-bold text-gray-800 text-lg">
+                    <div class="w-2.5 h-2.5 bg-black rounded-full"></div> สมาชิกกลุ่ม
+                </div>
+                <!-- Textarea mapped for export cloning -->
+                <textarea class="data-input w-full flex-grow bg-transparent outline-none resize-none text-gray-700 placeholder-gray-300 text-base mb-2" placeholder="ระบุชื่อ-สกุล เลขที่..."></textarea>
+                
+                <div class="flex items-center gap-6 mt-auto pt-3 border-t border-gray-100">
+                    <label class="flex items-center gap-2 cursor-pointer group">
+                        <input type="radio" name="team" value="pink" class="w-5 h-5 text-pink-500 focus:ring-pink-400 accent-pink-500">
+                        <span class="text-gray-600 font-medium group-hover:text-pink-500">กลุ่มสีชมพู</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer group">
+                        <input type="radio" name="team" value="blue" class="w-5 h-5 text-blue-500 focus:ring-blue-400 accent-blue-500">
+                        <span class="text-gray-600 font-medium group-hover:text-blue-500">กลุ่มสีฟ้า</span>
+                    </label>
+                </div>
+            </div>
+        </header>
+
+        <section class="mb-10 p-5 bg-white/80 rounded-2xl shadow-sm border border-gray-100 backdrop-blur-sm">
+            <p class="text-lg sm:text-xl text-gray-800 leading-relaxed font-medium">
+                <span class="font-bold text-black text-xl">Question :</span> แป้งที่เพิ่มขึ้นจาก 100 กรัมเป็น 750 กรัม จะสามารถทำเค้กในปริมาณเพิ่มขึ้นโดยที่มีอัตราส่วนเดิมคงที่จะต้องเตรียม ไข่ไก่ เนยจืด และส่วนประกอบอื่น ๆ เพิ่มอย่างละเท่าไหร่
+            </p>
+        </section>
+
+        <section class="grid grid-cols-1 md:grid-cols-2 gap-10 mb-10">
+            
+            <!-- Left Column: Base Recipe (Red) -->
+            <div class="flex flex-col items-center">
+                <!-- Cupcake Icon -->
+                <div class="h-40 mb-4 flex items-center justify-center drop-shadow-lg">
+                    <svg viewBox="0 0 100 120" class="h-full w-auto" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M25,105 L75,105 L85,60 L15,60 Z" fill="#fff" stroke="#b91c1c" stroke-width="2"/>
+                        <polygon points="15,60 22,60 30,105 25,105" fill="#ef4444"/><polygon points="32,60 39,60 44,105 38,105" fill="#ef4444"/><polygon points="49,60 56,60 58,105 52,105" fill="#ef4444"/><polygon points="66,60 73,60 71,105 65,105" fill="#ef4444"/><polygon points="85,60 78,60 80,105 75,105" fill="#ef4444"/>
+                        <path d="M12,55 Q50,70 88,55 L85,60 L15,60 Z" fill="#fde047" stroke="#ca8a04" stroke-width="2"/>
+                        <path d="M5,45 Q10,60 25,50 Q40,65 55,50 Q70,65 85,50 Q95,60 95,45 C95,25 75,30 65,15 C55,0 45,0 35,15 C25,30 5,25 5,45 Z" fill="#ffffff" stroke="#d1d5db" stroke-width="2"/>
+                        <circle cx="50" cy="12" r="10" fill="#dc2626" stroke="#991b1b" stroke-width="2"/>
+                        <path d="M50,12 Q60,-15 75,-5" fill="none" stroke="#451a03" stroke-width="2.5"/>
+                    </svg>
+                </div>
+                <!-- Title Label -->
+                <div class="bg-[#b91c1c] text-white px-10 py-2 rounded-lg font-bold text-2xl shadow-md mb-6 w-56 text-center z-10">
+                    2 ปอนด์
+                </div>
+                <!-- Red Dashed Box -->
+                <div class="border-2 border-dashed border-red-500 rounded-3xl p-6 w-full bg-white space-y-6 flex-grow shadow-sm">
+                    <!-- Flour -->
+                    <div class="flex items-center gap-4">
+                        <div class="w-16 h-16 flex-shrink-0"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect x="25" y="20" width="50" height="70" rx="4" fill="#bfdbfe" stroke="#1e3a8a" stroke-width="3"/><path d="M25 40 L75 40 L75 25 Q50 35 25 25 Z" fill="#60a5fa" stroke="#1e3a8a" stroke-width="2"/><rect x="35" y="55" width="30" height="20" fill="#fef08a" stroke="#1e3a8a" stroke-width="2"/></svg></div>
+                        <div class="flex-grow flex flex-col items-center">
+                            <div class="bg-[#b91c1c] text-white text-sm px-4 py-1 rounded w-full text-center font-bold mb-1">แป้งสาลี</div>
+                            <div class="text-3xl font-bold text-gray-800">100 <span class="text-xl font-medium">กรัม</span></div>
+                        </div>
+                    </div>
+                    <!-- Eggs -->
+                    <div class="flex items-center gap-4">
+                        <div class="w-16 h-16 flex-shrink-0"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><ellipse cx="35" cy="50" rx="14" ry="18" fill="#fde68a" stroke="#78350f" stroke-width="3"/><ellipse cx="65" cy="50" rx="14" ry="18" fill="#fde68a" stroke="#78350f" stroke-width="3"/><path d="M15 65 Q50 85 85 65 L80 75 Q50 95 20 75 Z" fill="#a16207" stroke="#78350f" stroke-width="2"/></svg></div>
+                        <div class="flex-grow flex flex-col items-center">
+                            <div class="bg-[#b91c1c] text-white text-sm px-4 py-1 rounded w-full text-center font-bold mb-1">ไข่ไก่</div>
+                            <div class="text-3xl font-bold text-gray-800">4 <span class="text-xl font-medium">ฟอง</span></div>
+                        </div>
+                    </div>
+                    <!-- Butter -->
+                    <div class="flex items-center gap-4">
+                        <div class="w-16 h-16 flex-shrink-0"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><ellipse cx="50" cy="70" rx="35" ry="10" fill="#f1f5f9" stroke="#334155" stroke-width="3"/><rect x="35" y="45" width="35" height="20" fill="#fef08a" stroke="#334155" stroke-width="3"/><path d="M50 45 L70 25" stroke="#94a3b8" stroke-width="4" stroke-linecap="round"/></svg></div>
+                        <div class="flex-grow flex flex-col items-center">
+                            <div class="bg-[#b91c1c] text-white text-sm px-4 py-1 rounded w-full text-center font-bold mb-1">เนยจืด</div>
+                            <div class="text-3xl font-bold text-gray-800">80 <span class="text-xl font-medium">กรัม</span></div>
+                        </div>
+                    </div>
+                    <!-- Others -->
+                    <div class="flex items-center gap-4">
+                        <div class="w-16 h-16 flex-shrink-0"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="30" fill="none" stroke="#fcd34d" stroke-width="5"/><circle cx="50" cy="50" r="23" fill="none" stroke="#334155" stroke-width="2"/><circle cx="38" cy="50" r="4" fill="#3b82f6"/><circle cx="50" cy="50" r="4" fill="#3b82f6"/><circle cx="62" cy="50" r="4" fill="#3b82f6"/></svg></div>
+                        <div class="flex-grow flex flex-col items-center">
+                            <div class="bg-[#b91c1c] text-white text-sm px-4 py-1 rounded w-full text-center font-bold mb-1">อื่น ๆ</div>
+                            <div class="text-3xl font-bold text-gray-800">20 <span class="text-xl font-medium">กรัม</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Target Recipe (Blue) -->
+            <div class="flex flex-col items-center">
+                <!-- Silhouette Cupcake -->
+                <div class="h-40 mb-4 flex items-center justify-center drop-shadow-lg relative">
+                    <svg viewBox="0 0 100 120" class="h-full w-auto" xmlns="http://www.w3.org/2000/svg">
+                        <g fill="#1f2937" stroke="#111827" stroke-width="2">
+                            <path d="M25,105 L75,105 L85,60 L15,60 Z"/>
+                            <path d="M12,55 Q50,70 88,55 L85,60 L15,60 Z"/>
+                            <path d="M5,45 Q10,60 25,50 Q40,65 55,50 Q70,65 85,50 Q95,60 95,45 C95,25 75,30 65,15 C55,0 45,0 35,15 C25,30 5,25 5,45 Z"/>
+                            <path d="M50,12 Q60,-15 75,-5" fill="none" stroke="#111827"/><circle cx="50" cy="12" r="10"/>
+                        </g>
+                    </svg>
+                    <span class="absolute text-white font-bold text-5xl mt-6">?</span>
+                </div>
+                <!-- Title Label -->
+                <div class="bg-blue-100 border-2 border-blue-400 text-blue-900 px-6 py-2 rounded-lg font-bold text-xl shadow-sm mb-6 w-56 text-center z-10 flex items-center justify-center relative">
+                    <input type="text" class="data-input bg-transparent w-full text-center outline-none placeholder-blue-400" placeholder="? สูตรใหม่">
+                </div>
+                <!-- Blue Dashed Box -->
+                <div class="border-2 border-dashed border-blue-500 rounded-3xl p-6 w-full bg-white space-y-6 flex-grow shadow-sm">
+                    <!-- Flour (Static target) -->
+                    <div class="flex items-center gap-4">
+                        <div class="w-16 h-16 flex-shrink-0"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect x="25" y="20" width="50" height="70" rx="4" fill="#bfdbfe" stroke="#1e3a8a" stroke-width="3"/><path d="M25 40 L75 40 L75 25 Q50 35 25 25 Z" fill="#60a5fa" stroke="#1e3a8a" stroke-width="2"/><rect x="35" y="55" width="30" height="20" fill="#fef08a" stroke="#1e3a8a" stroke-width="2"/></svg></div>
+                        <div class="flex-grow flex flex-col items-center">
+                            <div class="bg-[#3b82f6] text-white text-sm px-4 py-1 rounded w-full text-center font-bold mb-1">แป้งสาลี</div>
+                            <div class="text-3xl font-bold text-gray-800">750 <span class="text-xl font-medium">กรัม</span></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Eggs Input -->
+                    <div class="flex items-center gap-4 relative">
+                        <div class="w-16 h-16 flex-shrink-0"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><ellipse cx="35" cy="50" rx="14" ry="18" fill="#fde68a" stroke="#78350f" stroke-width="3"/><ellipse cx="65" cy="50" rx="14" ry="18" fill="#fde68a" stroke="#78350f" stroke-width="3"/><path d="M15 65 Q50 85 85 65 L80 75 Q50 95 20 75 Z" fill="#a16207" stroke="#78350f" stroke-width="2"/></svg></div>
+                        <div class="flex-grow flex flex-col items-center relative w-full">
+                            <div class="bg-[#3b82f6] text-white text-sm px-4 py-1 rounded w-full text-center font-bold mb-1">ไข่ไก่</div>
+                            <div class="flex items-center justify-center w-full">
+                                <input type="number" class="data-input border-b-2 border-gray-300 bg-transparent text-center font-bold text-2xl w-24 py-1 outline-none focus:border-blue-500" placeholder="">
+                                <span class="text-xl font-medium text-gray-800 ml-2">ฟอง</span>
+                            </div>
+                        </div>
+                        <!-- Check icons (hidden by default) -->
+                        <div class="check-icons hidden absolute -right-4 flex-col gap-1">
+                            <button class="w-6 h-6 rounded-full bg-green-100 border border-green-500 flex items-center justify-center text-[10px] hover:bg-green-200 transition-colors" onclick="toggleEval(this)">✅</button>
+                            <button class="w-6 h-6 rounded-full bg-red-100 border border-red-500 flex items-center justify-center text-[10px] hover:bg-red-200 transition-colors" onclick="toggleEval(this)">❌</button>
+                        </div>
+                    </div>
+
+                    <!-- Butter Input -->
+                    <div class="flex items-center gap-4 relative">
+                        <div class="w-16 h-16 flex-shrink-0"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><ellipse cx="50" cy="70" rx="35" ry="10" fill="#f1f5f9" stroke="#334155" stroke-width="3"/><rect x="35" y="45" width="35" height="20" fill="#fef08a" stroke="#334155" stroke-width="3"/><path d="M50 45 L70 25" stroke="#94a3b8" stroke-width="4" stroke-linecap="round"/></svg></div>
+                        <div class="flex-grow flex flex-col items-center relative w-full">
+                            <div class="bg-[#3b82f6] text-white text-sm px-4 py-1 rounded w-full text-center font-bold mb-1">เนยจืด</div>
+                            <div class="flex items-center justify-center w-full">
+                                <input type="number" class="data-input border-b-2 border-gray-300 bg-transparent text-center font-bold text-2xl w-24 py-1 outline-none focus:border-blue-500" placeholder="">
+                                <span class="text-xl font-medium text-gray-800 ml-2">กรัม</span>
+                            </div>
+                        </div>
+                        <div class="check-icons hidden absolute -right-4 flex-col gap-1">
+                            <button class="w-6 h-6 rounded-full bg-green-100 border border-green-500 flex items-center justify-center text-[10px] hover:bg-green-200 transition-colors" onclick="toggleEval(this)">✅</button>
+                            <button class="w-6 h-6 rounded-full bg-red-100 border border-red-500 flex items-center justify-center text-[10px] hover:bg-red-200 transition-colors" onclick="toggleEval(this)">❌</button>
+                        </div>
+                    </div>
+
+                    <!-- Others Input -->
+                    <div class="flex items-center gap-4 relative">
+                        <div class="w-16 h-16 flex-shrink-0"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="30" fill="none" stroke="#fcd34d" stroke-width="5"/><circle cx="50" cy="50" r="23" fill="none" stroke="#334155" stroke-width="2"/><circle cx="38" cy="50" r="4" fill="#3b82f6"/><circle cx="50" cy="50" r="4" fill="#3b82f6"/><circle cx="62" cy="50" r="4" fill="#3b82f6"/></svg></div>
+                        <div class="flex-grow flex flex-col items-center relative w-full">
+                            <div class="bg-[#3b82f6] text-white text-sm px-4 py-1 rounded w-full text-center font-bold mb-1">อื่น ๆ</div>
+                            <div class="flex items-center justify-center w-full">
+                                <input type="number" class="data-input border-b-2 border-gray-300 bg-transparent text-center font-bold text-2xl w-24 py-1 outline-none focus:border-blue-500" placeholder="">
+                                <span class="text-xl font-medium text-gray-800 ml-2">กรัม</span>
+                            </div>
+                        </div>
+                        <div class="check-icons hidden absolute -right-4 flex-col gap-1">
+                            <button class="w-6 h-6 rounded-full bg-green-100 border border-green-500 flex items-center justify-center text-[10px] hover:bg-green-200 transition-colors" onclick="toggleEval(this)">✅</button>
+                            <button class="w-6 h-6 rounded-full bg-red-100 border border-red-500 flex items-center justify-center text-[10px] hover:bg-red-200 transition-colors" onclick="toggleEval(this)">❌</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Submit Proportions -->
+                <div class="w-full mt-6 export-hide justify-center">
+                    <button id="btn-submit-props" onclick="submitStep1()" class="bg-[#3b82f6] hover:bg-blue-600 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-transform active:scale-95 w-full sm:w-auto">
+                        ส่งสัดส่วน (ล็อคข้อมูล)
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- CRITICAL FIX 2: Dashed Border fix with proper padding inside/outside -->
+        <section class="mb-10 flex flex-col items-center w-full relative">
+            <div class="border-2 border-dashed border-blue-500 rounded-3xl p-6 bg-white shadow-sm w-full relative">
+                <p class="text-gray-800 font-bold mb-4 text-lg">
+                    เพราะอะไรเราถึงสามารถทำเค้กต่อได้โดยที่อัตราส่วนเรายังคงเดิม ไม่ผิดเพี้ยนแม้เราจะเพิ่มปริมาณมากขึ้น
+                </p>
+                <!-- Padding applied directly to textarea to prevent overlap with borders -->
+                <textarea class="data-input w-full p-4 border border-gray-300 rounded-xl resize-none outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 min-h-[120px] text-gray-700 bg-gray-50" placeholder="พิมพ์เหตุผลของคุณที่นี่..."></textarea>
+                
+                <!-- Check icons for reasoning -->
+                <div id="check-icons-reasoning" class="check-icons hidden absolute top-6 right-6 gap-2 flex-row">
+                    <button class="w-10 h-10 rounded-full bg-green-100 border-2 border-green-500 flex items-center justify-center text-lg hover:bg-green-200 transition-colors shadow-sm" onclick="toggleEval(this)">✅</button>
+                    <button class="w-10 h-10 rounded-full bg-red-100 border-2 border-red-500 flex items-center justify-center text-lg hover:bg-red-200 transition-colors shadow-sm" onclick="toggleEval(this)">❌</button>
+                </div>
+            </div>
+            
+            <div class="mt-6 export-hide justify-center w-full">
+                <button id="btn-submit-reason" onclick="submitStep2()" class="bg-[#3b82f6] hover:bg-blue-600 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-transform active:scale-95 w-full sm:w-auto">
+                    ส่งแนวคิด (ล็อคข้อมูล)
+                </button>
+            </div>
+        </section>
+
+        <!-- CRITICAL FIX 3: Pink Box fully styled correctly -->
+        <section id="section-reflection" class="hidden mb-6 flex flex-col items-center w-full transition-opacity duration-500 opacity-0">
+            <div class="border-2 border-pink-400 bg-pink-50 rounded-3xl p-6 shadow-sm w-full">
+                <h3 class="text-2xl font-bold text-pink-500 text-center mb-4 flex items-center justify-center gap-2">
+                    <span>✨</span> สิ่งที่ได้รับจากกิจกรรมนี้ <span>✨</span>
+                </h3>
+                <textarea class="data-input w-full p-4 border border-pink-200 rounded-xl resize-none outline-none focus:border-pink-400 focus:ring-2 focus:ring-pink-100 min-h-[100px] text-gray-800 bg-white" placeholder="สรุปสิ่งที่คุณได้เรียนรู้..."></textarea>
+            </div>
+        </section>
+
+        <!-- CRITICAL FIX 5: Export Timestamp -->
+        <div id="timestamp-container" class="export-show absolute bottom-4 right-8 text-right text-gray-500 font-medium text-sm">
+            <!-- Injected by JS -->
+        </div>
+    </div>
+
+    <!-- Export Button (Outside wrapper so it's not captured) -->
+    <div class="mt-8 mb-4 max-w-4xl w-full flex justify-center px-4 export-hide">
+        <button id="btn-export" onclick="startExport()" class="flex items-center gap-3 bg-gray-800 hover:bg-gray-900 text-white font-bold py-4 px-10 rounded-full shadow-xl transition-transform active:scale-95 text-lg w-full sm:w-auto justify-center">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+            ส่งครบแล้ว เอ็กซ์พอร์ต JPG
+        </button>
+    </div>
+
+    <!-- Export Result Modal: always shows the generated image so users on
+         iPad/iPhone (where automatic downloads are unreliable) can long-press
+         and save it, with Share / Download buttons for every platform. -->
+    <div id="export-modal">
+        <div id="export-modal-inner">
+            <div class="p-4 border-b border-gray-100 flex items-center justify-between gap-3">
+                <p class="font-bold text-gray-800 text-sm sm:text-base" id="export-modal-title">ผลลัพธ์การเอ็กซ์พอร์ต</p>
+                <button onclick="closeExportModal()" class="text-gray-400 hover:text-gray-600 text-2xl leading-none px-2">&times;</button>
+            </div>
+            <div id="export-modal-img-wrap">
+                <img id="export-modal-img" src="" alt="Lady Breaks Worksheet">
+            </div>
+            <div class="p-4 border-t border-gray-100 flex flex-col gap-2">
+                <p id="export-modal-hint" class="text-xs sm:text-sm text-gray-500 text-center"></p>
+                <div class="flex flex-col sm:flex-row gap-2">
+                    <button id="export-modal-share" onclick="shareExportedImage()" class="hidden flex-1 bg-[#3b82f6] hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-full shadow transition-transform active:scale-95">
+                        แชร์ / บันทึกรูปภาพ
+                    </button>
+                    <a id="export-modal-download" href="#" download="LadyBreaks.jpg" class="flex-1 text-center bg-gray-800 hover:bg-gray-900 text-white font-bold py-3 px-6 rounded-full shadow transition-transform active:scale-95">
+                        ดาวน์โหลดรูปภาพ
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isStep1Done = false;
+        let isStep2Done = false;
+        let exportedImageBlob = null;
+
+        // Visual toggle for check/cross buttons (Teacher evaluation)
+        function toggleEval(btn) {
+            const siblings = btn.parentElement.querySelectorAll('button');
+            siblings.forEach(b => {
+                b.style.transform = 'scale(0.8)';
+                b.style.opacity = '0.5';
+            });
+            btn.style.transform = 'scale(1.1)';
+            btn.style.opacity = '1';
+        }
+
+        function submitStep1() {
+            // Lock inputs in blue section
+            const inputs = document.querySelectorAll('.grid .data-input');
+            inputs.forEach(input => input.disabled = true);
+            
+            // Hide submit, show checks
+            document.getElementById('btn-submit-props').parentElement.style.display = 'none';
+            document.querySelectorAll('.grid .check-icons').forEach(el => {
+                el.classList.remove('hidden');
+                el.classList.add('flex', 'fade-in');
+            });
+
+            isStep1Done = true;
+            checkFinalUnlock();
+        }
+
+        function submitStep2() {
+            // Lock textarea in reasoning
+            const reasonBox = document.querySelector('section:nth-of-type(3) .data-input');
+            reasonBox.disabled = true;
+
+            // Hide submit, show checks
+            document.getElementById('btn-submit-reason').parentElement.style.display = 'none';
+            const checkIcons = document.getElementById('check-icons-reasoning');
+            checkIcons.classList.remove('hidden');
+            checkIcons.classList.add('flex', 'fade-in');
+
+            isStep2Done = true;
+            checkFinalUnlock();
+        }
+
+        function checkFinalUnlock() {
+            if (isStep1Done && isStep2Done) {
+                const reflection = document.getElementById('section-reflection');
+                reflection.classList.remove('hidden');
+                // Trigger reflow to ensure fade-in works
+                void reflection.offsetWidth; 
+                reflection.style.opacity = '1';
+                
+                setTimeout(() => {
+                    reflection.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                }, 300);
+            }
+        }
+
+        // Detect iOS / iPadOS (including iPadOS 13+ which reports as "MacIntel" but has touch support)
+        function isIOSDevice() {
+            return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+                   (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        }
+
+        function isMobileDevice() {
+            return isIOSDevice() || /Android/i.test(navigator.userAgent);
+        }
+
+        function closeExportModal() {
+            document.getElementById('export-modal').classList.remove('open');
+        }
+
+        async function shareExportedImage() {
+            if (!exportedImageBlob) return;
+            try {
+                const file = new File([exportedImageBlob], `LadyBreaks_${Date.now()}.jpg`, { type: 'image/jpeg' });
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    await navigator.share({ files: [file], title: 'Lady Breaks Worksheet' });
+                } else {
+                    alert('อุปกรณ์นี้ไม่รองรับการแชร์ไฟล์โดยตรง กรุณาใช้ปุ่ม "ดาวน์โหลดรูปภาพ" หรือกดค้างที่รูปภาพเพื่อบันทึกแทน');
+                }
+            } catch (shareErr) {
+                // AbortError just means the user closed the share sheet - not an error to surface
+                if (shareErr.name !== 'AbortError') {
+                    console.error('Share error:', shareErr);
+                }
+            }
+        }
+
+        async function startExport() {
+            const btn = document.getElementById('btn-export');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = 'กำลังประมวลผล...';
+            btn.disabled = true;
+
+            // 1. Add "exporting" class to body to hide UI buttons via CSS
+            document.body.classList.add('exporting');
+
+            // 2. Set timestamp
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+            const timeStr = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+            document.getElementById('timestamp-container').innerText = `ส่งเมื่อ: ${dateStr} เวลา ${timeStr} น.`;
+
+            // Wait for web fonts to finish loading before capture.
+            try {
+                if (document.fonts && document.fonts.ready) {
+                    await document.fonts.ready;
+                }
+            } catch (e) { /* ignore - not all browsers support this */ }
+
+            // Wait a tick for the timestamp/exporting-class DOM update to paint
+            await new Promise(r => setTimeout(r, 250));
+
+            // Reset scroll position - capture can grab the wrong region on
+            // mobile Safari if the page is scrolled when it starts.
+            window.scrollTo(0, 0);
+            await new Promise(r => setTimeout(r, 50));
+
+            // 3. Capture with html-to-image. Unlike html2canvas (which
+            // reimplements CSS layout/text-drawing from scratch and kept
+            // producing mismatches - wrong fonts, shifted input text,
+            // missing placeholders), html-to-image serializes the actual
+            // live DOM into an SVG <foreignObject> and lets the browser
+            // itself rasterize it, so the export is pixel-identical to
+            // what's on screen (input values, placeholders, fonts, flexbox
+            // centering - all handled natively, no manual DOM cloning).
+            const captureArea = document.getElementById('worksheet-wrapper');
+
+            // Cap the render scale so the resulting canvas never exceeds
+            // browser pixel-area limits (iOS Safari in particular refuses to
+            // render/export very large canvases, which silently breaks export).
+            const rectW = captureArea.scrollWidth;
+            const rectH = captureArea.scrollHeight;
+            const desiredScale = Math.min(2, window.devicePixelRatio || 2);
+            const maxDim = 4000; // safe ceiling across iOS/Android/desktop browsers
+            const scale = Math.min(desiredScale, maxDim / rectW, maxDim / rectH, desiredScale);
+
+            try {
+                const canvas = await htmlToImage.toCanvas(captureArea, {
+                    pixelRatio: scale > 0 ? scale : 1,
+                    backgroundColor: '#ffffff', // Force pure white background
+                    width: rectW,
+                    height: rectH
+                });
+
+                // Use a Blob instead of a base64 data URL: much lighter on
+                // memory (important on mobile) and required for the Web Share API.
+                const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.95));
+                if (!blob) throw new Error('Canvas produced an empty blob');
+
+                exportedImageBlob = blob;
+                const fileName = `LadyBreaks_${Date.now()}.jpg`;
+                const blobUrl = URL.createObjectURL(blob);
+
+                // Always populate the on-screen result modal - this is the
+                // one path that reliably works on every device, because the
+                // user can view and long-press-save the image directly even
+                // when automatic downloads are blocked or ignored (iPad/iPhone).
+                document.getElementById('export-modal-img').src = blobUrl;
+                const downloadLink = document.getElementById('export-modal-download');
+                downloadLink.href = blobUrl;
+                downloadLink.download = fileName;
+
+                const shareBtn = document.getElementById('export-modal-share');
+                const canShareFiles = !!(navigator.canShare && navigator.canShare({
+                    files: [new File([blob], fileName, { type: 'image/jpeg' })]
+                }));
+                shareBtn.classList.toggle('hidden', !canShareFiles);
+
+                document.getElementById('export-modal-hint').innerText = isMobileDevice()
+                    ? 'กดค้างที่รูปภาพเพื่อบันทึกลงเครื่อง หรือแตะปุ่มด้านล่าง'
+                    : 'คลิก "ดาวน์โหลดรูปภาพ" เพื่อบันทึกไฟล์ลงเครื่อง';
+
+                document.getElementById('export-modal').classList.add('open');
+
+                // On desktop browsers we can additionally trigger the download
+                // automatically as a convenience (this reliably works there,
+                // unlike on iOS Safari where it's silently ignored).
+                if (!isMobileDevice()) {
+                    const autoLink = document.createElement('a');
+                    autoLink.href = blobUrl;
+                    autoLink.download = fileName;
+                    document.body.appendChild(autoLink);
+                    autoLink.click();
+                    document.body.removeChild(autoLink);
+                }
+            } catch (err) {
+                console.error("Export Error:", err);
+                alert("เกิดข้อผิดพลาดในการเอ็กซ์พอร์ต กรุณาลองใหม่อีกครั้ง");
+            } finally {
+                document.body.classList.remove('exporting');
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
